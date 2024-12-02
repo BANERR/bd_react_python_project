@@ -8,11 +8,20 @@ import './index.scss';
 
 //pages
 import InformationList from './components/informationList/informationList';
+import AddInformation from './components/general/addInformation/addInformation';
 
 const router = createBrowserRouter([
   {
     path: '',
-    element: <InformationList/>
+    element: <InformationList page='viewInformation'/>
+  },
+  {
+    path: '/saved-information',
+    element: <InformationList page='savedInformation'/>
+  },
+  {
+    path: '/add-information',
+    element: <AddInformation />
   },
 ])
 
