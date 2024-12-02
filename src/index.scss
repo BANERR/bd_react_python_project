@@ -1,0 +1,16 @@
+body{
+    padding: 0;
+    margin: 0;
+    font-family: 'Exo 2', sans-serif;
+}
+  
+body::-webkit-scrollbar {
+    width: 0.69vw;
+    height: 0.7vh;
+}
+
+body::-webkit-scrollbar-thumb {
+      background: #949494;
+      border-radius: 1vw;
+      border: none;
+}
