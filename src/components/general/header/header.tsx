@@ -5,10 +5,11 @@ import { useEffect, useState } from 'react';
 //styles
 import './header.scss'
 
-const Header = ({children}) => {
-  const [pages, setPages] = useState([])
+const Header = () => {
+  const [pages, setPages] = useState<{link: string, page: string}[]>([])
   const [userName, setUserName] = useState('')
-  const [status] = useState('superAdmin')
+  const [status] = useState<string>('superAdmin')
+  const [loginned] = useState(false)
 
   const location = useLocation();
   
@@ -30,9 +31,9 @@ const Header = ({children}) => {
           pages.map((page)=>{return <Link className={`header-page ${location.pathname === page.link ? 'active' : ''}`} to={page.link}>{page.page}</Link>})
         }
       </div>
-      <div className="header-authorization">
+      <div className="header-authorization-container">
         {
-          status.loginned ?
+          loginned ?
             <Link className={`header-page ${location.pathname === '/profile' ? 'active' : ''}`} to={'/profile'}>{userName}</Link>
             : 
               <>

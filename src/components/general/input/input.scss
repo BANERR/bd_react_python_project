@@ -1,0 +1,18 @@
+.input{
+    width: 100%;
+    outline: none;
+    border: none;
+    font-size: 1vw;
+    border-radius: 0.5vw;
+}
+
+.input-error{
+    border: 1px solid red;
+    margin-bottom: 5px;
+}
+
+.input-error-text{
+    font-size: 16px;
+    color: red;
+    padding-left: 12px;
+}
