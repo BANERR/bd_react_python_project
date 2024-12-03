@@ -2,11 +2,11 @@
 import './informationList.scss'
 
 //components
-import Header from '../general/header/header';
-import Input from '../general/input/input';
+import Header from '../../components/general/header/header';
+import Input from '../../components/general/input/input';
 import { FC, useEffect, useState } from 'react';
-import InformationItem from './informationItem/informationItem';
-import Pagination from '../general/pagination/pagination';
+import InformationItem from '../../components/informationItem/informationItem';
+import Pagination from '../../components/general/pagination/pagination';
 import { formsUrl } from '../../network/urls';
 import { authorizedRequest } from '../../network/request';
 
@@ -33,41 +33,41 @@ const InformationList: FC<{page: string}> = ({page}) => {
   const [informationList, setInformationList] = useState<informationItemType[]>([])
   const [loading, setLoading] = useState(false)
 
-    useEffect(()=>{
-        loadData(currentPage, searchValue)
-        // .then((data) => {
-        //     setInformationList([...informationList, ...data])
-        // })
+  useEffect(()=>{
+      loadData(currentPage, searchValue)
+      // .then((data) => {
+      //     setInformationList([...informationList, ...data])
+      // })
 
-    }, [currentPage])
+  }, [currentPage])
 
-    const loadData = (page: number, request: string) => {
-        setLoading(true)
+  const loadData = (page: number, request: string) => {
+      setLoading(true)
 
-        // return authorizedRequest(formsUrl + `?page=${page}&needle=${request}`, 'GET')
-        // .then((response) => {            
-        //   console.log(response)
+      // return authorizedRequest(formsUrl + `?page=${page}&needle=${request}`, 'GET')
+      // .then((response) => {            
+      //   console.log(response)
 
-        //   const { result }: { result: {
-        //       forms: informationItemResponseType[],
-        //       total_pages: number
-        //   } } = response
+      //   const { result }: { result: {
+      //       forms: informationItemResponseType[],
+      //       total_pages: number
+      //   } } = response
 
-        //   setPageNumber(result.total_pages)
-        //   setLoading(false)
+      //   setPageNumber(result.total_pages)
+      //   setLoading(false)
 
-        //   return [...result.forms.map((item) => {
-        //       return {
-        //           id: item.id,
-        //           title: item.title,
-        //           text: item.text,
-        //           files: item.files,
-        //           saved: item.saved
-        //       }
-        //   })]
+      //   return [...result.forms.map((item) => {
+      //       return {
+      //           id: item.id,
+      //           title: item.title,
+      //           text: item.text,
+      //           files: item.files,
+      //           saved: item.saved
+      //       }
+      //   })]
 
-        // })
-    }
+      // })
+  }
 
   useEffect(()=>{
     setCurrentPage(1)
