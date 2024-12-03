@@ -7,8 +7,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.scss';
 
 //pages
-import InformationList from './components/informationList/informationList';
-import AddInformation from './components/addInformation/addInformation';
+import InformationList from './pages/informationList/informationList';
+import AddInformation from './pages/addInformation/addInformation';
+import UserManagement from './pages/userManagement/userManagement';
 
 const router = createBrowserRouter([
   {
@@ -22,6 +23,10 @@ const router = createBrowserRouter([
   {
     path: '/add-information',
     element: <AddInformation />
+  },
+  {
+    path: '/user-management',
+    element: <UserManagement />
   },
 ])
 

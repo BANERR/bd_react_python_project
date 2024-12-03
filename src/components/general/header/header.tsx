@@ -19,7 +19,7 @@ const Header = () => {
     }else if(status === 'admin'){
       setPages([{link: '/', page: 'View Information'}, {link: '/saved-information', page: 'Saved Information'}, {link: '/add-information', page: 'Add Information'}])
     }else if (status === 'superAdmin'){
-      setPages([{link: '/', page: 'View Information'}, {link: '/saved-information', page: 'Saved Information'}, {link: '/add-information', page: 'Add Information'}, {link: '/admins', page: 'Admins'}])
+      setPages([{link: '/', page: 'View Information'}, {link: '/saved-information', page: 'Saved Information'}, {link: '/add-information', page: 'Add Information'}, {link: '/user-management', page: 'User Management'}])
     }
 
     setUserName('Artem')

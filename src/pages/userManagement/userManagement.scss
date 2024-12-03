@@ -1,0 +1,30 @@
+.user-management-wrapper{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 3vw;
+    padding-bottom: 5vw;
+  
+  
+    .user-management-container{
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      align-items: center;
+      gap: 3vw;
+  
+      .user-management-search-container{
+        width: 70vw;
+        padding: 1vw 2vw;
+        border-radius: 1vw;
+        border: 1px #444 solid;
+      }
+  
+      .user-management-list{
+        width: 70vw;
+        display: flex;
+        flex-direction: column;
+        gap: 1vw;
+      }
+    }
+}

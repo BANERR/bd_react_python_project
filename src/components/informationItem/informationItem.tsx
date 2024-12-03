@@ -1,6 +1,6 @@
 //styles
 import { FC } from 'react';
-import { edit, star, trash } from '../../../assets/icon';
+import { edit, star, trash } from '../../assets/icon';
 import './informationItem.scss'
 
 type informationItemType = {
