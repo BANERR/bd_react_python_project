@@ -8,7 +8,7 @@ import './index.scss';
 
 //pages
 import InformationList from './components/informationList/informationList';
-import AddInformation from './components/general/addInformation/addInformation';
+import AddInformation from './components/addInformation/addInformation';
 
 const router = createBrowserRouter([
   {
