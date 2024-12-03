@@ -8,12 +8,12 @@ body{
     box-sizing: border-box;
 }
   
-body::-webkit-scrollbar {
+*::-webkit-scrollbar {
     width: 0.69vw;
     height: 0.7vh;
 }
 
-body::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
       background: #949494;
       border-radius: 1vw;
       border: none;

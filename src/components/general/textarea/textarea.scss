@@ -1,23 +1,28 @@
-.input{
+.textarea{
     font-family: Arial, sans-serif;
     width: 100%;
+    padding: 0.5vw 1vw;
     outline: none;
-    border: none;
     font-size: 1vw;
     border-radius: 0.5vw;
+    min-height: 10vw;
+    max-height: 30vw;
+    border: none;
+    resize: none;
 }
-.input::placeholder{
+
+.textarea::placeholder{
     color: #999;
     font-size: 1vw;
 }
 
-.input-error{
+.textarea-error{
     border: 1px solid red;
     margin-bottom: 5px;
 }
 
-.input-error-text{
-    font-size: 16px;
+.textarea-error-text{
+    font-size: 0.8vw;
     color: red;
-    padding-left: 12px;
+    padding-left: 1vw;
 }
