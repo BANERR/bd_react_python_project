@@ -1,0 +1,31 @@
+.edit-wrapper{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 3vw;
+    padding-bottom: 5vw;
+
+    .edit-container{
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        align-items: center;
+        gap: 3vw;
+
+        .input{
+            width: 70vw;
+            padding: 1vw 2vw;
+            border-radius: 1vw;
+            border: 1px #444 solid;
+        }
+
+        .edit-action-container{
+            width: 70vw;
+            display: flex;
+            justify-content: left;
+            align-items: center;
+            gap: 3vw;
+
+        }
+    }
+}

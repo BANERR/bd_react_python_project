@@ -9,7 +9,8 @@ const Header = () => {
   const [pages, setPages] = useState<{link: string, page: string}[]>([])
   const [userName, setUserName] = useState('')
   const [status] = useState<string>('superAdmin')
-  const [loginned] = useState(false)
+  const [userId, setUserId] = useState(0)
+  const [loginned] = useState(true)
 
   const location = useLocation();
   
@@ -24,6 +25,11 @@ const Header = () => {
 
     setUserName('Artem')
   },[status])
+
+  useEffect(()=>{
+    setUserId(1)
+    setUserName('Artem Kurylenko')
+  },[])
   return (
     <div className="header-wrapper">
       <div className="header-pages-container">
@@ -34,7 +40,7 @@ const Header = () => {
       <div className="header-authorization-container">
         {
           loginned ?
-            <Link className={`header-page ${location.pathname === '/profile' ? 'active' : ''}`} to={'/profile'}>{userName}</Link>
+            <Link className={`header-page ${location.pathname === '/profile' ? 'active' : ''}`} to={`/profile/${userId}`}>{userName}</Link>
             : 
               <>
                 <Link className={`header-page ${location.pathname === '/login' ? 'active' : ''}`} to={'/login'}>Login</Link>
