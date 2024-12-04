@@ -16,12 +16,13 @@ const Input:FC<inputProps> = ({type, value, placeholder, onChange, disabled, err
 
     return (
         <div className="input-wrapper">
-            <input className={error? 'input-error input': 'input'}
+            <input className={error? 'input input-error': 'input'}
                 type={type}
                 value={value}
                 onChange={onChange}
                 disabled={disabled}
                 placeholder={placeholder}
+                autoComplete="off"
             />
             {
                 error?

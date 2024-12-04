@@ -1,12 +1,12 @@
+//react
+import { useEffect, useState } from 'react';
+
 //styles
 import './userManagement.scss'
 
 //components
 import Header from '../../components/general/header/header';
-import { useEffect, useState } from 'react';
 import Input from '../../components/general/input/input';
-import Textarea from '../../components/general/textarea/textarea';
-import Button from '../../components/general/button/button';
 import Pagination from '../../components/general/pagination/pagination';
 import UserCard from '../../components/userCard/userCard';
 
