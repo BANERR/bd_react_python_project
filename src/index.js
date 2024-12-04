@@ -13,6 +13,7 @@ import UserManagement from './pages/userManagement/userManagement';
 import Login from './pages/login/login';
 import Registration from './pages/registration/registration';
 import EditInformation from './pages/editInformation/editInformation';
+import Profile from './pages/profile/profile';
 
 const router = createBrowserRouter([
   {
@@ -39,10 +40,13 @@ const router = createBrowserRouter([
     path: '/registration',
     element: <Registration />
   },
-  ,
   {
     path: '/edit-information/:id',
     element: <EditInformation />
+  },
+  {
+    path: '/profile/:id',
+    element: <Profile />
   },
 ])
 
