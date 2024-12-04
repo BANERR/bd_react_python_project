@@ -2,6 +2,7 @@
 import { FC } from 'react';
 import { edit, star, trash } from '../../assets/icon';
 import './informationItem.scss'
+import { Link } from 'react-router-dom';
 
 type informationItemType = {
   id: number
@@ -38,7 +39,7 @@ const InformationItem: FC<informationItemType> = ({id, title, text, files, saved
       <div className="information-item-action-container">
         <div className={`information-item-action-button ${saved ? 'saved' : ''}`}>{star}</div>
         <div className="information-item-action-button">{trash}</div>
-        <div className="information-item-action-button">{edit}</div>
+        <Link className='information-item-action-button' to={`edit-information/${id}`}>{edit}</Link>
       </div>
     </div>
   )

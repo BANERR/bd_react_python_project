@@ -12,6 +12,7 @@ import AddInformation from './pages/addInformation/addInformation';
 import UserManagement from './pages/userManagement/userManagement';
 import Login from './pages/login/login';
 import Registration from './pages/registration/registration';
+import EditInformation from './pages/editInformation/editInformation';
 
 const router = createBrowserRouter([
   {
@@ -37,6 +38,11 @@ const router = createBrowserRouter([
   {
     path: '/registration',
     element: <Registration />
+  },
+  ,
+  {
+    path: '/edit-information/:id',
+    element: <EditInformation />
   },
 ])
 
