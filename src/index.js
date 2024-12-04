@@ -10,6 +10,8 @@ import './index.scss';
 import InformationList from './pages/informationList/informationList';
 import AddInformation from './pages/addInformation/addInformation';
 import UserManagement from './pages/userManagement/userManagement';
+import Login from './pages/login/login';
+import Registration from './pages/registration/registration';
 
 const router = createBrowserRouter([
   {
@@ -27,6 +29,14 @@ const router = createBrowserRouter([
   {
     path: '/user-management',
     element: <UserManagement />
+  },
+  {
+    path: '/login',
+    element: <Login />
+  },
+  {
+    path: '/registration',
+    element: <Registration />
   },
 ])
 

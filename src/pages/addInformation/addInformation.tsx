@@ -58,14 +58,13 @@ const AddInformation = () => {
     let flag = true
   
     if(title.length < 5){
-      setErrors({...errors, title: 'Please enter title'})
-      flag = false
-    }
+			setErrors(prevErrors => ({...prevErrors, title: 'Enter your title'}))
+			flag = false
+		}else setErrors(prevErrors => ({...prevErrors, title: ''}))
     if(text.length < 10){
-      setErrors({...errors, text: 'Please enter text'})
-      if (!flag) setErrors({ title: 'Please enter title', text: 'Please enter text'})
+      setErrors(prevErrors => ({...prevErrors, text: 'Enter your text'}))
       flag = false
-    }
+    }else setErrors(prevErrors => ({...prevErrors, text: ''}))
 
     return flag
   }
@@ -101,14 +100,14 @@ const AddInformation = () => {
                     type='text'
                     onChange={(e)=>setTitle(e.target.value)}
                     value={title}
-                    placeholder={'Write title'}
+                    placeholder={'Enter title'}
                     error={errors.title}
                 />
                 <Textarea
                     value={text}
                     onChange={(e)=>setText(e.target.value)}
                     error={errors.text}
-                    placeholder={'Write text'}
+                    placeholder={'Enter text'}
                 />
                 <input type="file" multiple onChange={handleFileChange} className='file-input'/>
                 <div className='files-list'>

@@ -1,0 +1,39 @@
+.login-wrapper{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 3vw;
+    padding-bottom: 5vw;
+
+    .login-container{
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        align-items: center;
+        gap: 3vw;
+
+        .input{
+            width: 70vw;
+            padding: 1vw 2vw;
+            border-radius: 1vw;
+            border: 1px #444 solid;
+        }
+
+        .login-action-container{
+            width: 70vw;
+            display: flex;
+            justify-content: left;
+            align-items: center;
+            gap: 3vw;
+
+            .login-action-remember-me{
+                display: flex;
+                gap: 0.5vw;
+                .login-action-remember-me-text{
+                    font-size: 1vw;
+                    color: #444;
+                }
+            }
+        }
+    }
+}
