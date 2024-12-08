@@ -8,6 +8,7 @@ import './registration.scss'
 import Header from '../../components/general/header/header';
 import Input from '../../components/general/input/input';
 import Button from '../../components/general/button/button';
+import { useNavigate } from 'react-router-dom';
 
 type errors = {
     email?: string
@@ -21,29 +22,55 @@ const Registration = () => {
     const [fullName, setFullName] = useState('')
     const [errors, setErrors] = useState<errors>({email: '', password: '', fullName: ''})
 
+    const navigate = useNavigate()
+
     const checkErrors = () => {
         setErrors({email: '', password: ''})
         let flag = true
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-		if(!emailRegex.test(email)){
+		if (!emailRegex.test(email)) {
 			setErrors(prevErrors => ({...prevErrors, email: 'Enter correct email'}))
 			flag = false
-		}else setErrors(prevErrors => ({...prevErrors, email: ''}))
-        if(password.length < 8){
+		} else setErrors(prevErrors => ({...prevErrors, email: ''}))
+        if (password.length < 8) {
             setErrors(prevErrors => ({...prevErrors, password: 'Enter correct password'}))
             flag = false
-        }else setErrors(prevErrors => ({...prevErrors, password: ''}))
-        if(fullName.length < 3){
+        } else setErrors(prevErrors => ({...prevErrors, password: ''}))
+        if (fullName.length < 3) {
             setErrors(prevErrors => ({...prevErrors, fullName: 'Enter correct full name'}))
             flag = false
-        }else setErrors(prevErrors => ({...prevErrors, fullName: ''}))
+        } else setErrors(prevErrors => ({...prevErrors, fullName: ''}))
 
         return flag
     }
     
     const handleSubmit = () => {
-        checkErrors()
+        if (!checkErrors()) return
+
+        try {
+            fetch('http://localhost:5000/api/user/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    full_name: fullName,
+                    email: email,
+                    password: password,
+                })
+            })
+            .then((response)=>{
+                if (response.ok) {
+                    navigate('/login')
+                } else {
+                    alert('An error occurred')
+                }
+            })
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during registration');
+        }
     }
   
     return (
