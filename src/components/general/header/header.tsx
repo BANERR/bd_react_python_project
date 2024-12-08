@@ -1,35 +1,58 @@
 //react
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react';
 
 //styles
 import './header.scss'
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../../redux/store';
+import { setUserData } from '../../../redux/slicers/userSlice';
 
 const Header = () => {
   const [pages, setPages] = useState<{link: string, page: string}[]>([])
-  const [userName, setUserName] = useState('')
-  const [status] = useState<string>('superAdmin')
-  const [userId, setUserId] = useState(0)
-  const [loginned] = useState(true)
-
+  const [fullName, setFullName] = useState('')
+  const [loginned, setLoginned] = useState(false)
   const location = useLocation();
+  const user = useSelector((state: RootState) => state.user.userData);
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
   
   useEffect(()=>{
-    if(status === 'user'){
+
+    console.log(user)
+    if(user.status === 'user'){
       setPages([{link: '/', page: 'View Information'}])
-    }else if(status === 'admin'){
+    }else if(user.status === 'admin'){
       setPages([{link: '/', page: 'View Information'}, {link: '/saved-information', page: 'Saved Information'}, {link: '/add-information', page: 'Add Information'}])
-    }else if (status === 'superAdmin'){
+    }else if (user.status === 'superAdmin'){
       setPages([{link: '/', page: 'View Information'}, {link: '/saved-information', page: 'Saved Information'}, {link: '/add-information', page: 'Add Information'}, {link: '/user-management', page: 'User Management'}])
     }
 
-    setUserName('Artem')
-  },[status])
+    setFullName(user.fullName)
+    setLoginned(user.loginned)
 
-  useEffect(()=>{
-    setUserId(1)
-    setUserName('Artem Kurylenko')
-  },[])
+  },[user])
+  
+
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const authToken = localStorage.getItem('authToken');
+
+    if (authToken && userData && Date.now() < userData.tokenExpiration) {
+        dispatch(setUserData(userData));
+    } else {
+        localStorage.clear();
+        dispatch(setUserData({
+          id: 0,
+          fullName: '',
+          loginned: false,
+          status: 'user',
+          email: ''
+        })); // Очищаем localStorage, если токен просрочен
+    }
+  }, [dispatch, navigate]);
+
+  
   return (
     <div className="header-wrapper">
       <div className="header-pages-container">
@@ -40,7 +63,7 @@ const Header = () => {
       <div className="header-authorization-container">
         {
           loginned ?
-            <Link className={`header-page ${location.pathname === '/profile' ? 'active' : ''}`} to={`/profile/${userId}`}>{userName}</Link>
+            <Link className={`header-page ${location.pathname === '/profile' ? 'active' : ''}`} to={`/profile/${user.id}`}>{fullName}</Link>
             : 
               <>
                 <Link className={`header-page ${location.pathname === '/login' ? 'active' : ''}`} to={'/login'}>Login</Link>
