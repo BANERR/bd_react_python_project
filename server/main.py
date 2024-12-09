@@ -5,6 +5,8 @@ import jwt
 import datetime
 from config import host, user, password, db_name
 import secrets
+import random
+import string
 
 app = Flask(__name__)
 CORS(app)  
@@ -31,7 +33,17 @@ def create_tables():
                 email varchar(50) NOT NULL,
                 password varchar(50) NOT NULL,
                 status varchar(50) NOT NULL,
-                loginned boolean NOT NULL
+                loginned boolean NOT NULL,
+                saved_information INT[]
+            );
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS information (
+                id serial PRIMARY KEY,
+                title varchar(50) NOT NULL,
+                text varchar(1000) NOT NULL,
+                path varchar(200)[] NOT NULL
             );
         """)
         connection.commit()
@@ -66,6 +78,8 @@ def register_user():
         return jsonify({'message': 'User registered successfully'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
 
 @app.route('/api/user/login', methods=['POST'])
 def login_user():
@@ -120,9 +134,159 @@ def check_token():
         return jsonify({'message': 'Invalid token'}), 401
 
 
+# ------------------------------------------ Information List -----------------------------------------------------------
+
+
+@app.route('/api/information-list', methods=['POST'])
+def information_list():
+    try:
+        data = request.get_json()
+        user_id = data.get('id')
+        request_type = data.get('request_type')
+        search_value = data.get('search_value', '')
+        page_number = int(data.get('page_number', 1))
+        page_size = 5  
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        if search_value:
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM information 
+                WHERE title ILIKE %s OR text ILIKE %s;
+            """, (f'%{search_value}%', f'%{search_value}%'))
+        else:
+            cursor.execute("SELECT COUNT(*) FROM information;")
+
+        total_records = cursor.fetchone()[0]
+        total_pages = (total_records + page_size - 1) // page_size 
+
+        offset = (page_number - 1) * page_size
+        if search_value:
+            cursor.execute("""
+                SELECT id, title, text, path 
+                FROM information 
+                WHERE title ILIKE %s OR text ILIKE %s
+                ORDER BY id 
+                LIMIT %s OFFSET %s;
+            """, (f'%{search_value}%', f'%{search_value}%', page_size, offset))
+        else:
+            cursor.execute("""
+                SELECT id, title, text, path 
+                FROM information 
+                ORDER BY id 
+                LIMIT %s OFFSET %s;
+            """, (page_size, offset))
+
+        information_list = cursor.fetchall()
+        connection.close()
+
+        # Формируем ответ
+        response = {
+            'total_pages': total_pages,
+            'information_list': [
+                {
+                    'id': info[0],
+                    'title': info[1],
+                    'text': info[2],
+                    'path': info[3]
+                }
+                for info in information_list
+            ]
+        }
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    
+def random_string(length):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+def insert_random_information():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        for _ in range(15):
+            title = random_string(10)  # Генерация случайного заголовка длиной 10 символов
+            text = random_string(50)  # Генерация случайного текста длиной 50 символов
+            path = [f"/path/to/file{random.randint(1, 100)}"]  # Генерация случайного пути
+
+            cursor.execute(
+                """
+                INSERT INTO information (title, text, path)
+                VALUES (%s, %s, %s)
+                """,
+                (title, text, path)
+            )
+
+        connection.commit()
+
+    except Exception as e:
+        print(f"Ошибка при вставке данных: {e}")
+
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/information/save', methods=['POST'])
+def save_information():
+    try:
+        data = request.get_json()
+        user_id = data['user_id']
+        information_id = data['information_id']
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Убедиться, что массив инициализирован
+        cursor.execute("""
+            UPDATE users
+            SET saved_information = ARRAY[]::INT[]
+            WHERE saved_information IS NULL AND id = %s;
+        """, (user_id,))
+
+        # Добавить информацию в массив, если её там ещё нет
+        cursor.execute("""
+            UPDATE users 
+            SET saved_information = 
+                CASE
+                    WHEN NOT (%s = ANY(saved_information)) THEN array_append(saved_information, %s)
+                    ELSE saved_information
+                END
+            WHERE id = %s;
+        """, (information_id, information_id, user_id))
+
+        connection.commit()
+        connection.close()
+
+        return jsonify({'message': 'Information saved successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/information/delete/<int:information_id>', methods=['DELETE'])
+def delete_information(information_id):
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Удаляем информацию из таблицы
+        cursor.execute("DELETE FROM information WHERE id = %s;", (information_id,))
+        connection.commit()
+        connection.close()
+
+        return jsonify({'message': 'Information deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 
 if __name__ == '__main__':
     # create_tables()  
+    # insert_random_information()
     app.run(debug=True)
