@@ -7,6 +7,7 @@ type userState = {
     id: number
     loginned: boolean
     status: string
+    savedInformation: number[]
 }
 
 
@@ -16,7 +17,8 @@ const initialState = {
         email: '',
         id: 0,
         loginned: false,
-        status: 'user'
+        status: 'user',
+        savedInformation: [0]
     }
 }
 

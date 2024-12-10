@@ -9,21 +9,21 @@ import InformationItem from '../../components/informationItem/informationItem';
 import Pagination from '../../components/general/pagination/pagination';
 import { formsUrl } from '../../network/urls';
 import { authorizedRequest } from '../../network/request';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/store';
 
 type informationItemType = {
   id: number
   title: string, 
   text: string, 
-  files: string[],
-  saved: boolean
+  path: string[],
 }
 
 type informationItemResponseType = {
   id: number
   title: string, 
   text: string, 
-  files: string[],
-  saved: boolean
+  path: string[],
 }
 
 const InformationList: FC<{page: string}> = ({page}) => {
@@ -31,83 +31,58 @@ const InformationList: FC<{page: string}> = ({page}) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageNumber, setPageNumber] = useState<number>(5)
   const [informationList, setInformationList] = useState<informationItemType[]>([])
-  const [loading, setLoading] = useState(false)
+
+  const user = useSelector((state: RootState) => state.user.userData);
 
   useEffect(()=>{
-      loadData(currentPage, searchValue)
-      // .then((data) => {
-      //     setInformationList([...informationList, ...data])
-      // })
+    if(user.id !== 0) loadData(currentPage, searchValue)
+  }, [currentPage, page, user])
 
-  }, [currentPage])
+  const loadData = async (pageNumber: number, request: string) => {
+    try{
+      const response = await fetch('http://localhost:5000/api/information-list', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            id: user.id,
+            page_type: page,
+            search_value: request,
+            page_number: pageNumber
+        }),
+      });
 
-  const loadData = (page: number, request: string) => {
-      setLoading(true)
+      if (response.ok) {
+        const data = await response.json()
 
-      // return authorizedRequest(formsUrl + `?page=${page}&needle=${request}`, 'GET')
-      // .then((response) => {            
-      //   console.log(response)
+        const informationData: informationItemType[] = []
 
-      //   const { result }: { result: {
-      //       forms: informationItemResponseType[],
-      //       total_pages: number
-      //   } } = response
+        setPageNumber(data.total_pages)
 
-      //   setPageNumber(result.total_pages)
-      //   setLoading(false)
+        data.information_list.map((informationItem: informationItemResponseType)=>{
+          informationData.push({
+            id: informationItem.id,
+            title: informationItem.title,
+            text: informationItem.text,
+            path: informationItem.path
+          })
+        })
 
-      //   return [...result.forms.map((item) => {
-      //       return {
-      //           id: item.id,
-      //           title: item.title,
-      //           text: item.text,
-      //           files: item.files,
-      //           saved: item.saved
-      //       }
-      //   })]
+        setInformationList(informationData)
+          
+      } else {
+        console.error('Error');
 
-      // })
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+    }
   }
 
   useEffect(()=>{
     setCurrentPage(1)
     loadData(1, searchValue)
-    // .then((data) => {
-    //   setInformationList([...data])
-    // })
-
-    setInformationList(
-      [
-        {
-          id: 1,
-          title: 'Something',
-          text: '  Lorem ipsum dolor, sit amet consectetur adipisicing elit. Mollitia, officiis atque consectetur sequi ratione culpa incidunt eum officia tenetur perferendis eius voluptates? Atque, autem. Modi vel nulla porro reiciendis temporibus quae, dicta pariatur, omnis cupiditate ea laborum sint vero, voluptas possimus ex atque! Nulla qui hic quod dicta perspiciatis velit, nam asperiores. Optio quisquam minima voluptatibus blanditiis reprehenderit consectetur repellat eveniet totam? Dolore sed quos id repellendus. Dignissimos asperiores excepturi quo explicabo reiciendis architecto, eum culpa ullam ex porro! Ducimus deserunt veniam officia iure! Asperiores odit corporis quas dicta tempore id, reprehenderit soluta minima, ullam fuga repudiandae sequi necessitatibus impedit.',
-          files: [],
-          saved: true
-        },
-        {
-          id: 2,
-          title: 'Something',
-          text: '  Lorem ipsum dolor, sit amet consectetur adipisicing elit.',
-          files: [],
-          saved: false
-        },
-        {
-          id: 3,
-          title: 'Something',
-          text: '  Lorem ipsum dolor, sit amet consectetur adipisicing elit. Mollitia, officiis atque consectetur sequi ratione culpa incidunt eum officia tenetur perferendis eius voluptates? Atque, autem. Modi vel nulla porro reiciendis temporibus quae, dicta pariatur, omnis cupiditate ea laborum sint vero, voluptas possimus ex atque! Nulla qui hic quod dicta perspiciatis velit, nam asperiores. Optio quisquam minima voluptatibus blanditiis reprehenderit consectetur repellat eveniet totam? Dolore sed quos id repellendus. Dignissimos asperiores excepturi quo explicabo reiciendis architecto, eum culpa ullam ex porro! Ducimus deserunt veniam officia iure! Asperiores odit corporis quas dicta tempore id, reprehenderit soluta minima, ullam fuga repudiandae sequi necessitatibus impedit.',
-          files: [],
-          saved: true
-        },
-        {
-          id: 4,
-          title: 'Something',
-          text: '  Lorem ipsum dolor, sit amet consectetur adipisicing elit. Mollitia, officiis atque consectetur sequi ratione culpa incidunt eum officia tenetur perferendis eius voluptates? Atque, autem. Modi vel nulla porro reiciendis temporibus quae, dicta pariatur, omnis cupiditate ea laborum sint vero, voluptas possimus ex atque! Nulla qui hic quod dicta perspiciatis velit, nam asperiores. Optio quisquam minima voluptatibus blanditiis reprehenderit consectetur repellat eveniet totam? Dolore sed quos id repellendus. Dignissimos asperiores excepturi quo explicabo reiciendis architecto, eum culpa ullam ex porro! Ducimus deserunt veniam officia iure! Asperiores odit corporis quas dicta tempore id, reprehenderit soluta minima, ullam fuga repudiandae sequi necessitatibus impedit.',
-          files: [],
-          saved: true
-        },
-      ]
-    )
   }, [searchValue])
 
 
@@ -131,9 +106,10 @@ const InformationList: FC<{page: string}> = ({page}) => {
                   key={`information-item-${item.id}`}
                   title={item.title}
                   text={item.text}
-                  files={item.files}
-                  saved={item.saved}
+                  path={item.path}
                   id={item.id}
+                  informationList={informationList}
+                  setInformationList={setInformationList}
                 />
               )
             })

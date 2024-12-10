@@ -96,6 +96,8 @@ def login_user():
     user = cursor.fetchone()
     connection.close()
 
+    print(user)
+
     if user:
         token = jwt.encode({
             'id': user[0],
@@ -103,6 +105,7 @@ def login_user():
             'full_name': user[1],
             'status': user[4],
             'loginned': True,
+            'saved_information': user[6],
             'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)  
         }, SECRET_KEY, algorithm="HS256")
         
@@ -116,6 +119,7 @@ def login_user():
                 'status': user[4],
                 'loginned': True,
                 'password': user[3],
+                'saved_information': user[6]
             }
         }
         return jsonify(response), 200
@@ -142,7 +146,7 @@ def information_list():
     try:
         data = request.get_json()
         user_id = data.get('id')
-        request_type = data.get('request_type')
+        page_type = data.get('page_type')
         search_value = data.get('search_value', '')
         page_number = int(data.get('page_number', 1))
         page_size = 5  
@@ -150,34 +154,61 @@ def information_list():
         connection = get_db_connection()
         cursor = connection.cursor()
 
+        # Определяем условие фильтрации
+        base_query = """
+            SELECT id, title, text, path 
+            FROM information 
+        """
+        where_clause = ""
+        if page_type == 'savedInformation':
+            if not user_id:
+                return jsonify({'error': 'User ID is required for savedInformation request type'}), 400
+
+            where_clause = """
+                WHERE id IN (
+                    SELECT UNNEST(saved_information)
+                    FROM users
+                    WHERE id = %s
+                )
+            """
+        elif page_type == 'viewInformation':
+            where_clause = "WHERE TRUE"
+
         if search_value:
-            cursor.execute("""
-                SELECT COUNT(*) 
-                FROM information 
-                WHERE title ILIKE %s OR text ILIKE %s;
-            """, (f'%{search_value}%', f'%{search_value}%'))
+            search_filter = " AND (title ILIKE %s OR text ILIKE %s)"
+            where_clause += search_filter
+
+        # Подсчёт общего количества записей
+        count_query = f"SELECT COUNT(*) FROM ({base_query} {where_clause}) AS subquery"
+        if page_type == 'savedInformation':
+            cursor.execute(count_query, (user_id, f'%{search_value}%', f'%{search_value}%') if search_value else (user_id,))
         else:
-            cursor.execute("SELECT COUNT(*) FROM information;")
+            cursor.execute(count_query, (f'%{search_value}%', f'%{search_value}%') if search_value else ())
 
         total_records = cursor.fetchone()[0]
-        total_pages = (total_records + page_size - 1) // page_size 
+        total_pages = (total_records + page_size - 1) // page_size
 
+        # Получение записей для текущей страницы
         offset = (page_number - 1) * page_size
-        if search_value:
-            cursor.execute("""
-                SELECT id, title, text, path 
-                FROM information 
-                WHERE title ILIKE %s OR text ILIKE %s
-                ORDER BY id 
-                LIMIT %s OFFSET %s;
-            """, (f'%{search_value}%', f'%{search_value}%', page_size, offset))
+        limit_offset_query = f"""
+            {base_query} {where_clause}
+            ORDER BY id 
+            LIMIT %s OFFSET %s
+        """
+        if page_type == 'savedInformation':
+            cursor.execute(
+                limit_offset_query,
+                (user_id, f'%{search_value}%', f'%{search_value}%', page_size, offset)
+                if search_value
+                else (user_id, page_size, offset)
+            )
         else:
-            cursor.execute("""
-                SELECT id, title, text, path 
-                FROM information 
-                ORDER BY id 
-                LIMIT %s OFFSET %s;
-            """, (page_size, offset))
+            cursor.execute(
+                limit_offset_query,
+                (f'%{search_value}%', f'%{search_value}%', page_size, offset)
+                if search_value
+                else (page_size, offset)
+            )
 
         information_list = cursor.fetchall()
         connection.close()
@@ -200,6 +231,7 @@ def information_list():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
     
 def random_string(length):
@@ -250,21 +282,50 @@ def save_information():
             WHERE saved_information IS NULL AND id = %s;
         """, (user_id,))
 
-        # Добавить информацию в массив, если её там ещё нет
+        # Получить текущий список сохранённой информации
         cursor.execute("""
-            UPDATE users 
-            SET saved_information = 
-                CASE
-                    WHEN NOT (%s = ANY(saved_information)) THEN array_append(saved_information, %s)
-                    ELSE saved_information
-                END
+            SELECT saved_information
+            FROM users
             WHERE id = %s;
-        """, (information_id, information_id, user_id))
+        """, (user_id,))
+        result = cursor.fetchone()
+        if not result:
+            connection.close()
+            return jsonify({'error': 'User not found'}), 404
+
+        saved_information = result[0] if result[0] else []
+
+        # Определить действие: добавить или удалить
+        if information_id in saved_information:
+            # Удалить информацию из массива
+            cursor.execute("""
+                UPDATE users
+                SET saved_information = array_remove(saved_information, %s)
+                WHERE id = %s;
+            """, (information_id, user_id))
+            message = 'Information removed successfully'
+        else:
+            # Добавить информацию в массив
+            cursor.execute("""
+                UPDATE users
+                SET saved_information = array_append(saved_information, %s)
+                WHERE id = %s;
+            """, (information_id, user_id))
+            message = 'Information saved successfully'
 
         connection.commit()
+
+        # Получить обновлённый список сохранённой информации
+        cursor.execute("""
+            SELECT saved_information
+            FROM users
+            WHERE id = %s;
+        """, (user_id,))
+        updated_saved_information = cursor.fetchone()[0]
+
         connection.close()
 
-        return jsonify({'message': 'Information saved successfully'}), 200
+        return jsonify(updated_saved_information), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
