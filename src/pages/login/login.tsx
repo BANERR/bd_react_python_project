@@ -65,6 +65,7 @@ const Login = () => {
                     status: data.user.status,
                     loginned: true,
                     password: data.user.password,
+                    savedInformation: data.user.saved_information,
                     tokenExpiration, // Сохраняем время истечения токена
                 }));
     

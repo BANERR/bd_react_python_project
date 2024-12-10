@@ -9,28 +9,30 @@ import { RootState } from '../../../redux/store';
 import { setUserData } from '../../../redux/slicers/userSlice';
 
 const Header = () => {
-  const [pages, setPages] = useState<{link: string, page: string}[]>([])
-  const [fullName, setFullName] = useState('')
-  const [loginned, setLoginned] = useState(false)
-  const location = useLocation();
+
   const user = useSelector((state: RootState) => state.user.userData);
+  const [pages, setPages] = useState<{link: string, page: string}[]>([])
+  const [fullName, setFullName] = useState(user.fullName)
+  const [loginned, setLoginned] = useState(user.loginned)
+
+
+  const location = useLocation();
   const navigate = useNavigate()
   const dispatch = useDispatch()
   
   useEffect(()=>{
+    setFullName(user.fullName)
+    setLoginned(user.loginned)
 
-    console.log(user)
-    if(user.status === 'user'){
+    if(user.status === 'user' && user.loginned == false){
       setPages([{link: '/', page: 'View Information'}])
+    }else if(user.status === 'user' && user.loginned == true){
+      setPages([{link: '/', page: 'View Information'}, {link: '/saved-information', page: 'Saved Information'}])
     }else if(user.status === 'admin'){
       setPages([{link: '/', page: 'View Information'}, {link: '/saved-information', page: 'Saved Information'}, {link: '/add-information', page: 'Add Information'}])
     }else if (user.status === 'superAdmin'){
       setPages([{link: '/', page: 'View Information'}, {link: '/saved-information', page: 'Saved Information'}, {link: '/add-information', page: 'Add Information'}, {link: '/user-management', page: 'User Management'}])
     }
-
-    setFullName(user.fullName)
-    setLoginned(user.loginned)
-
   },[user])
   
 
@@ -47,7 +49,8 @@ const Header = () => {
           fullName: '',
           loginned: false,
           status: 'user',
-          email: ''
+          email: '',
+          savedInformation: [0]
         })); // Очищаем localStorage, если токен просрочен
     }
   }, [dispatch, navigate]);
