@@ -1,22 +1,22 @@
 //react
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
 //styles
 import './header.scss'
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../redux/store';
-import { setUserData } from '../../../redux/slicers/userSlice';
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState } from '../../../redux/store'
+import { setUserData } from '../../../redux/slicers/userSlice'
 
 const Header = () => {
 
-  const user = useSelector((state: RootState) => state.user.userData);
+  const user = useSelector((state: RootState) => state.user.userData)
   const [pages, setPages] = useState<{link: string, page: string}[]>([])
   const [fullName, setFullName] = useState(user.fullName)
   const [loginned, setLoginned] = useState(user.loginned)
 
 
-  const location = useLocation();
+  const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
   
@@ -37,13 +37,13 @@ const Header = () => {
   
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    const authToken = localStorage.getItem('authToken');
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+    const authToken = localStorage.getItem('authToken')
 
     if (authToken && userData && Date.now() < userData.tokenExpiration) {
-        dispatch(setUserData(userData));
+        dispatch(setUserData(userData))
     } else {
-        localStorage.clear();
+        localStorage.clear()
         dispatch(setUserData({
           id: 0,
           fullName: '',
@@ -51,9 +51,9 @@ const Header = () => {
           status: 'user',
           email: '',
           savedInformation: [0]
-        })); // Очищаем localStorage, если токен просрочен
+        })) 
     }
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate])
 
   
   return (
@@ -78,4 +78,4 @@ const Header = () => {
   )
 }
 
-export default Header;
+export default Header

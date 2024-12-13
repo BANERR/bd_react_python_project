@@ -1,14 +1,14 @@
 //react
-import { useEffect, useState } from 'react';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 //styles
 import './registration.scss'
 
 //components
-import Header from '../../components/general/header/header';
-import Input from '../../components/general/input/input';
-import Button from '../../components/general/button/button';
-import { useNavigate } from 'react-router-dom';
+import Header from '../../components/general/header/header'
+import Input from '../../components/general/input/input'
+import Button from '../../components/general/button/button'
 
 type errors = {
     email?: string
@@ -27,7 +27,7 @@ const Registration = () => {
     const checkErrors = () => {
         setErrors({email: '', password: ''})
         let flag = true
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 		if (!emailRegex.test(email)) {
 			setErrors(prevErrors => ({...prevErrors, email: 'Enter correct email'}))
@@ -68,8 +68,8 @@ const Registration = () => {
                 }
             })
         } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred during registration');
+            console.error('Error:', error)
+            alert('An error occurred during registration')
         }
     }
   
@@ -109,4 +109,4 @@ const Registration = () => {
     )
 }
 
-export default Registration;
+export default Registration

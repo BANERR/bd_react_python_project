@@ -1,55 +1,58 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
+//react
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom' 
 
 // styles
 import './profile.scss'
 
+//redux
+import { RootState } from '../../redux/store'
+import { setUserData } from '../../redux/slicers/userSlice'
+import { useDispatch, useSelector } from 'react-redux'
+
 // components
-import Header from '../../components/general/header/header';
-import Input from '../../components/general/input/input';
-import Button from '../../components/general/button/button';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
-import { setUserData } from '../../redux/slicers/userSlice';
+import Header from '../../components/general/header/header'
+import Input from '../../components/general/input/input'
+import Button from '../../components/general/button/button'
+
 
 type errors = {
-    email?: string;
-    password?: string;
-    fullName?: string;
+    email?: string
+    password?: string
+    fullName?: string
 }
 
 const Profile = () => {
-    const [fullName, setFullName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [errors, setErrors] = useState<errors>({ email: '', password: '', fullName: '' });
+    const [fullName, setFullName] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [errors, setErrors] = useState<errors>({ email: '', password: '', fullName: '' })
 
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const user = useSelector((state: RootState) => state.user.userData);
+    const navigate = useNavigate()
+    const dispatch = useDispatch()
+    const user = useSelector((state: RootState) => state.user.userData)
 
-    // Validate form fields
     const checkErrors = () => {
-        setErrors({ email: '', password: '', fullName: '' });
-        let flag = true;
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        setErrors({ email: '', password: '', fullName: '' })
+        let flag = true
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
         if (!emailRegex.test(email)) {
-            setErrors(prevErrors => ({ ...prevErrors, email: 'Enter a valid email' }));
-            flag = false;
+            setErrors(prevErrors => ({ ...prevErrors, email: 'Enter a valid email' }))
+            flag = false
         }
 
         if (password.length < 8) {
-            setErrors(prevErrors => ({ ...prevErrors, password: 'Password must be at least 8 characters' }));
-            flag = false;
+            setErrors(prevErrors => ({ ...prevErrors, password: 'Password must be at least 8 characters' }))
+            flag = false
         }
 
         if (fullName.length < 3) {
-            setErrors(prevErrors => ({ ...prevErrors, fullName: 'Full name must be at least 3 characters' }));
-            flag = false;
+            setErrors(prevErrors => ({ ...prevErrors, fullName: 'Full name must be at least 3 characters' }))
+            flag = false
         }
 
-        return flag;
+        return flag
     }
 
     const handleSubmit = async () => {
@@ -67,39 +70,39 @@ const Profile = () => {
                         email: email, 
                         password: password
                     }),
-                });
+                })
 
                 if (response.ok) {
-                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                    userData.fullName = fullName;
-                    userData.email = email;
-                    userData.password = password;
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    dispatch(setUserData(userData));
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+                    userData.fullName = fullName
+                    userData.email = email
+                    userData.password = password
+                    localStorage.setItem('userData', JSON.stringify(userData))
+                    dispatch(setUserData(userData))
                     
                 } else {
-                    console.error('Error updating profile');
+                    console.error('Error updating profile')
                 }
             } catch (error) {
-                console.error('Error updating profile:', error);
+                console.error('Error updating profile:', error)
             }
         }
     }
 
     const logout = () => {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        navigate('/login');
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('userData')
+        navigate('/login')
     }
 
     useEffect(() => {
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}')
         if (userData) {
-            setFullName(userData.fullName);
-            setEmail(userData.email);
-            setPassword(userData.password);
+            setFullName(userData.fullName)
+            setEmail(userData.email)
+            setPassword(userData.password)
         }
-    }, []);
+    }, [])
 
     return (
         <div className="edit-wrapper">
@@ -136,7 +139,7 @@ const Profile = () => {
                 </div>
             </div>
         </div>
-    );
+    )
 }
 
-export default Profile;
+export default Profile

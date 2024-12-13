@@ -1,16 +1,47 @@
 //styles
-import { FC } from 'react';
 import './userCard.scss'
-import Button from '../general/button/button';
+
+//react
+import { FC, useState } from 'react'
+
+//components
+import Button from '../general/button/button'
 
 type userCardType = {
   id: number
-  name: string, 
-  email: string, 
-  status: string,
+  name: string
+  email: string
+  status: string
 }
 
 const UserCard: FC<userCardType> = ({id, name, email, status}) => {
+    const [userStatus, setUserStatus] = useState<string>(status)
+
+    const handleStatusChange = async (newStatus: string) => {
+        try {
+            const response = await fetch('http://localhost:5000/api/user/promote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: id,
+                    new_status: newStatus
+                })
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setUserStatus(newStatus)
+            } else {
+                console.error('Error:', data.error)
+            }
+        } catch (error) {
+            console.error('Error:', error)
+        }
+    }
+
     return (
         <div className="user-card-wrapper">
             <div className="user-card-name-container">
@@ -26,23 +57,23 @@ const UserCard: FC<userCardType> = ({id, name, email, status}) => {
             <div className="user-card-status-container">
                 <div className="user-card-status text">
                     {
-                        status === 'user' ? 'User':
-                        status === 'admin' ? 'Admin':
-                        status === 'superAdmin' ? 'Super Admin': null
+                        userStatus === 'user' ? 'User':
+                        userStatus === 'admin' ? 'Admin':
+                        userStatus === 'superAdmin' ? 'Super Admin': null
                     }
                 </div>
             </div>
             <div className="user-card-action-container">
                 {
-                    status === 'user' ?
+                    userStatus === 'user' ? 
                         <>
-                            <Button text='Give admin access' onClick={()=>{console.log('+')}}/>
-                            <Button text='Give super admin access' onClick={()=>{console.log('+')}}/>
+                            <Button text='Give admin access' onClick={() => handleStatusChange('admin')} />
+                            <Button text='Give super admin access' onClick={() => handleStatusChange('superAdmin')} />
                         </> : 
-                    status === 'admin' ?
+                    userStatus === 'admin' ?
                         <>
-                            <Button text='Delete admin access' onClick={()=>{console.log('+')}}/>
-                            <Button text='Give super admin access' onClick={()=>{console.log('+')}}/>
+                            <Button text='Delete admin access' onClick={() => handleStatusChange('user')} />
+                            <Button text='Give super admin access' onClick={() => handleStatusChange('superAdmin')} />
                         </> : null
                 }
             </div>
@@ -50,4 +81,4 @@ const UserCard: FC<userCardType> = ({id, name, email, status}) => {
     )
 }
 
-export default UserCard;
+export default UserCard
