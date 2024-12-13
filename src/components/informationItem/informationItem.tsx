@@ -1,39 +1,40 @@
-//styles
 import { FC, useState } from 'react';
-import { edit, star, trash } from '../../assets/icon';
-import './informationItem.scss'
+import './informationItem.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { setUserData } from '../../redux/slicers/userSlice';
+import { edit, star, trash } from '../../assets/icon';
 
-type informationItemType = {
-  id: number
-  title: string, 
-  text: string, 
-  path: string[]
-  
-}
+type FileType = {
+  id: number;
+  name: string;
+  url: string;
+};
 
-type informationItemProps = informationItemType & {
-  informationList: informationItemType[]
-  setInformationList: React.Dispatch<React.SetStateAction<informationItemType[]>>
-}
+type InformationItemType = {
+  id: number;
+  title: string;
+  text: string;
+  files: FileType[];
+};
 
-const InformationItem: FC<informationItemProps> = ({ id, title, text, path, informationList, setInformationList }) => {
+type InformationItemProps = InformationItemType & {
+  informationList: InformationItemType[];
+  setInformationList: React.Dispatch<React.SetStateAction<InformationItemType[]>>;
+};
+
+const InformationItem: FC<InformationItemProps> = ({ id, title, text, files, informationList, setInformationList }) => {
   const user = useSelector((state: RootState) => state.user.userData);
-  const [userStatus, setUserStatus] = useState(user.status);
-  const [userLoginned, setUserLoginned] = useState(user.loginned);
-  const [saved, setSaved] = useState(user.savedInformation.includes(id))
+  const [saved, setSaved] = useState(user.savedInformation.includes(id));
 
   const navigate = useNavigate();
-  const dispatch = useDispatch()
-
+  const dispatch = useDispatch();
 
   const saveInformation = async () => {
-    if (!userLoginned) return navigate('/login');
+    if (!user.loginned) return navigate('/login');
     try {
-      setSaved(!saved)
+      setSaved(!saved);
       const response = await fetch('http://localhost:5000/api/information/save', {
         method: 'POST',
         headers: {
@@ -49,12 +50,11 @@ const InformationItem: FC<informationItemProps> = ({ id, title, text, path, info
 
       if (response.ok) {
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        userData.savedInformation = data
-        localStorage.setItem('userData', JSON.stringify(userData))
-        dispatch(setUserData(userData))
-
+        userData.savedInformation = data;
+        localStorage.setItem('userData', JSON.stringify(userData));
+        dispatch(setUserData(userData));
       } else {
-        console.error('Error');
+        console.error('Error saving information.');
       }
     } catch (error) {
       console.error('Error saving information:', error);
@@ -66,15 +66,13 @@ const InformationItem: FC<informationItemProps> = ({ id, title, text, path, info
       const response = await fetch(`http://localhost:5000/api/information/delete/${id}`, {
         method: 'DELETE',
       });
-      const data = await response.json();
       if (response.ok) {
-        setInformationList(informationList.filter(item => item.id !== id));
+        setInformationList(informationList.filter((item) => item.id !== id));
       } else {
-        alert(data.message || 'Failed to delete information.');
+        console.error('Failed to delete information.');
       }
     } catch (error) {
       console.error('Error deleting information:', error);
-      alert('An error occurred while deleting information.');
     }
   };
 
@@ -87,22 +85,25 @@ const InformationItem: FC<informationItemProps> = ({ id, title, text, path, info
         <div className="information-item-text text">{text}</div>
       </div>
       <div className="information-item-files-container">
-        {path.map((image) => (
-          <div className="information-item-file text" key={image}>
-            {image}
-          </div>
+        {files.map((file) => (
+          <a
+            href={file.url}  // URL для скачивания
+            key={file.id}
+            className="information-item-file"
+            download={file.name}
+          >
+            {file.name}
+          </a>
         ))}
       </div>
       <div className="information-item-action-container">
-        {userLoginned ? (
-          <div
-            className={`information-item-action-button ${saved ? 'saved' : ''}`}
-            onClick={() => saveInformation()}
-          >
-            {star}
-          </div>
-        ) : null}
-        {userStatus === 'admin' || userStatus === 'superAdmin' ? (
+        <div
+          className={`information-item-action-button ${saved ? 'saved' : ''}`}
+          onClick={user.loginned ? () => saveInformation() : () => navigate('/login')}
+        >
+          {star}
+        </div>
+        {['admin', 'superAdmin'].includes(user.status) ? (
           <>
             <div className="information-item-action-button" onClick={() => deleteInformation()}>
               {trash}

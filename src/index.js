@@ -43,7 +43,7 @@ const router = createBrowserRouter([
     element: <Registration />
   },
   {
-    path: '/edit-information/:id',
+    path: '/edit-information/:informationId',
     element: <EditInformation />
   },
   {

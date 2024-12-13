@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
+
 import psycopg2
 from flask_cors import CORS
 import jwt
@@ -7,6 +8,8 @@ from config import host, user, password, db_name
 import secrets
 import random
 import string
+from werkzeug.utils import secure_filename
+import datetime
 
 app = Flask(__name__)
 CORS(app)  
@@ -34,7 +37,7 @@ def create_tables():
                 password varchar(50) NOT NULL,
                 status varchar(50) NOT NULL,
                 loginned boolean NOT NULL,
-                saved_information INT[]
+                saved_information INT[] DEFAULT '{}'
             );
         """)
 
@@ -43,9 +46,19 @@ def create_tables():
                 id serial PRIMARY KEY,
                 title varchar(50) NOT NULL,
                 text varchar(1000) NOT NULL,
-                path varchar(200)[] NOT NULL
+                file_ids INT[] DEFAULT '{}'
             );
         """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS files (
+                id serial PRIMARY KEY,
+                file_data BYTEA NOT NULL,
+                file_name VARCHAR(255) NOT NULL,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
         connection.commit()
         connection.close()
         print("Tables created successfully.")
@@ -149,15 +162,15 @@ def information_list():
         page_type = data.get('page_type')
         search_value = data.get('search_value', '')
         page_number = int(data.get('page_number', 1))
-        page_size = 5  
+        page_size = 5
 
         connection = get_db_connection()
         cursor = connection.cursor()
 
         # Определяем условие фильтрации
         base_query = """
-            SELECT id, title, text, path 
-            FROM information 
+            SELECT id, title, text, file_ids 
+            FROM information
         """
         where_clause = ""
         if page_type == 'savedInformation':
@@ -183,7 +196,7 @@ def information_list():
         if page_type == 'savedInformation':
             cursor.execute(count_query, (user_id, f'%{search_value}%', f'%{search_value}%') if search_value else (user_id,))
         else:
-            cursor.execute(count_query, (f'%{search_value}%', f'%{search_value}%') if search_value else ())
+            cursor.execute(count_query, (f'%{search_value}%', f'%{search_value}%' if search_value else ()))
 
         total_records = cursor.fetchone()[0]
         total_pages = (total_records + page_size - 1) // page_size
@@ -211,59 +224,79 @@ def information_list():
             )
 
         information_list = cursor.fetchall()
+
+        # Получаем файлы для каждой записи
+        response_list = []
+        for info in information_list:
+            info_id, title, text, file_ids = info
+            
+            # Извлекаем файлы по их ID
+            file_list = []
+            if file_ids:
+                cursor.execute(
+                    "SELECT id, file_name FROM files WHERE id = ANY(%s)",
+                    (file_ids,)
+                )
+                files = cursor.fetchall()
+                for file in files:
+                    file_id = file[0]
+                    file_name = file[1]
+                    # Формируем URL для скачивания файла
+                    file_url = f"http://localhost:5000/api/files/{file_id}/download"
+                    file_list.append({
+                        'id': file_id,
+                        'name': file_name,
+                        'url': file_url  # Ссылка для скачивания
+                    })
+            response_list.append({
+                'id': info_id,
+                'title': title,
+                'text': text,
+                'files': file_list
+            })
+
         connection.close()
 
         # Формируем ответ
         response = {
             'total_pages': total_pages,
-            'information_list': [
-                {
-                    'id': info[0],
-                    'title': info[1],
-                    'text': info[2],
-                    'path': info[3]
-                }
-                for info in information_list
-            ]
+            'information_list': response_list
         }
 
         return jsonify(response), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
     
-def random_string(length):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
-
-def insert_random_information():
+@app.route('/api/files/<int:file_id>/download', methods=['GET'])
+def download_file(file_id):
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        for _ in range(15):
-            title = random_string(10)  # Генерация случайного заголовка длиной 10 символов
-            text = random_string(50)  # Генерация случайного текста длиной 50 символов
-            path = [f"/path/to/file{random.randint(1, 100)}"]  # Генерация случайного пути
+        cursor.execute("SELECT file_data, file_name FROM files WHERE id = %s", (file_id,))
+        file = cursor.fetchone()
 
-            cursor.execute(
-                """
-                INSERT INTO information (title, text, path)
-                VALUES (%s, %s, %s)
-                """,
-                (title, text, path)
-            )
+        if not file:
+            return jsonify({'error': 'File not found'}), 404
 
-        connection.commit()
+        file_data, file_name = file
+        connection.close()
+
+        # Отправляем файл для скачивания
+        return Response(
+            file_data,
+            mimetype='application/octet-stream',
+            headers={
+                'Content-Disposition': f'attachment; filename={file_name}'
+            }
+        )
 
     except Exception as e:
-        print(f"Ошибка при вставке данных: {e}")
+        return jsonify({'error': str(e)}), 500
 
-    finally:
-        if connection:
-            cursor.close()
-            connection.close()
+
+
 
 @app.route('/api/information/save', methods=['POST'])
 def save_information():
@@ -303,7 +336,6 @@ def save_information():
                 SET saved_information = array_remove(saved_information, %s)
                 WHERE id = %s;
             """, (information_id, user_id))
-            message = 'Information removed successfully'
         else:
             # Добавить информацию в массив
             cursor.execute("""
@@ -311,7 +343,6 @@ def save_information():
                 SET saved_information = array_append(saved_information, %s)
                 WHERE id = %s;
             """, (information_id, user_id))
-            message = 'Information saved successfully'
 
         connection.commit()
 
@@ -344,10 +375,164 @@ def delete_information(information_id):
         return jsonify({'message': 'Information deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+# ------------------------------------------ Add information -----------------------------------------------------------
+
+
+@app.route('/api/information/add', methods=['POST'])
+def add_information_with_files():
+    try:
+        data = request.form
+        title = data.get('title')
+        text = data.get('text')
+
+        files = request.files.getlist('files')
+        file_ids = []
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Save each file as a BLOB in the files table
+        for file in files:
+            file_data = file.read()
+            file_name = secure_filename(file.filename)
+            cursor.execute(
+                """
+                INSERT INTO files (file_data, file_name)
+                VALUES (%s, %s) RETURNING id;
+                """,
+                (file_data, file_name)
+            )
+            file_id = cursor.fetchone()[0]
+            file_ids.append(file_id)
+
+        # Insert information with linked file IDs
+        cursor.execute(
+            """
+            INSERT INTO information (title, text, file_ids)
+            VALUES (%s, %s, %s);
+            """,
+            (title, text, file_ids)
+        )
+        connection.commit()
+        connection.close()
+
+        return jsonify({'message': 'Information and files saved successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ------------------------------------------ Edit information -----------------------------------------------------------
+
+
+@app.route('/api/get-information', methods=['POST'])
+def get_information():
+    try:
+        data = request.get_json()
+        user_id = data['user_id']
+        information_id = data['information_id']
+        print(user_id, information_id)
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        cursor.execute(
+            """SELECT title, text, file_ids FROM information WHERE id = %s""", 
+            (information_id,)
+        )
+
+        info = cursor.fetchone()
+
+        if not info:
+            return jsonify({"error": "Information not found"}), 404
+        
+        title, text, file_ids = info
+
+        # Отримуємо файли за їхніми ID
+        cursor.execute(
+            """SELECT id, file_name FROM files WHERE id = ANY(%s)""", 
+            (file_ids,)
+        )
+
+        files = [{"id": file[0], "name": file[1]} for file in cursor.fetchall()]
+
+        connection.close()
+
+        response = {
+            "title": title, 
+            "text": text, 
+            "files": files
+        }
+
+        return jsonify(response), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Оновлення інформації
+from flask import request, jsonify
+import json
+
+@app.route('/api/information/<int:info_id>', methods=['PUT'])
+def update_information(info_id):
+    try:
+        # Extract data from the request
+        title = request.form['title']
+        text = request.form['text']
+        new_files = request.files.getlist('files')  # Handle files
+        deleted_files = json.loads(request.form['deleted_files'])  # Handle deleted file IDs
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Update title and text
+        cursor.execute("""
+            UPDATE information
+            SET title = %s, text = %s
+            WHERE id = %s
+        """, (title, text, info_id))
+
+        # Remove deleted files
+        if deleted_files:
+            for file_id in deleted_files:
+                cursor.execute("""
+                    DELETE FROM files WHERE id = %s
+                """, (file_id,))
+
+                cursor.execute("""
+                    UPDATE information
+                    SET file_ids = array_remove(file_ids, %s)
+                    WHERE id = %s
+                """, (file_id, info_id))
+
+        # Add new files
+        file_ids = []
+        for file in new_files:
+            file_data = file.read()  # Read file binary data
+            file_name = file.filename
+
+            cursor.execute("""
+                INSERT INTO files (file_data, file_name)
+                VALUES (%s, %s) RETURNING id
+            """, (file_data, file_name))
+            file_ids.append(cursor.fetchone()[0])
+
+        # Update file IDs in the information table
+        if file_ids:
+            cursor.execute("""
+                UPDATE information
+                SET file_ids = array_cat(file_ids, %s)
+                WHERE id = %s
+            """, (file_ids, info_id))
+
+        connection.commit()
+        return jsonify({"message": "Information updated successfully"})
+
+    except Exception as e:
+        connection.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 
 if __name__ == '__main__':
     # create_tables()  
-    # insert_random_information()
     app.run(debug=True)
