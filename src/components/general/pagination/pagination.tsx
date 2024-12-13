@@ -42,7 +42,7 @@ const Pagination: FC<paginationType> = ({ totalPages, currentPage, setCurrentPag
             </button>
 
             <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-                &lt
+                Previus
             </button>
 
             {getPageNumbers().map((page) => (
@@ -56,7 +56,7 @@ const Pagination: FC<paginationType> = ({ totalPages, currentPage, setCurrentPag
             ))}
 
             <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                &gt
+                Next
             </button>
 
             <button onClick={goToLastPage} disabled={currentPage === totalPages}>
