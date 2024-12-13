@@ -1,18 +1,18 @@
 //react
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
 //styles
 import './userManagement.scss'
 
 //components
-import Header from '../../components/general/header/header';
-import Input from '../../components/general/input/input';
-import Pagination from '../../components/general/pagination/pagination';
-import UserCard from '../../components/userCard/userCard';
+import Header from '../../components/general/header/header'
+import Input from '../../components/general/input/input'
+import Pagination from '../../components/general/pagination/pagination'
+import UserCard from '../../components/userCard/userCard'
 
 type userType = {
   id: number
-  name: string
+  full_name: string
   email: string
   status: string
 }
@@ -24,111 +24,73 @@ const UserManagement = () => {
   const [usersList, setUsersList] = useState<userType[]>([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(()=>{
+  useEffect(() => {
     loadData(currentPage, searchValue)
-    // .then((data) => {
-    //     setInformationList([...informationList, ...data])
-    // })
+  }, [currentPage, searchValue])
 
-  }, [currentPage])
+  const loadData = async (page: number, search: string) => {
+    setLoading(true)
 
-  const loadData = (page: number, request: string) => {
-      setLoading(true)
+    const requestData = {
+      search_value: search,
+      page_number: page
+    }
 
-      // return authorizedRequest(formsUrl + `?page=${page}&needle=${request}`, 'GET')
-      // .then((response) => {            
-      //   console.log(response)
+    try {
+      const response = await fetch('http://localhost:5000/api/users-list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      })
 
-      //   const { result }: { result: {
-      //       forms: informationItemResponseType[],
-      //       total_pages: number
-      //   } } = response
+      const data = await response.json()
 
-      //   setPageNumber(result.total_pages)
-      //   setLoading(false)
-
-      //   return [...result.forms.map((item) => {
-      //       return {
-      //           id: item.id,
-      //           title: item.title,
-      //           text: item.text,
-      //           files: item.files,
-      //           saved: item.saved
-      //       }
-      //   })]
-
-      // })
+      if (response.ok) {
+        setUsersList(data.users_list)
+        setPageNumber(data.total_pages)
+      } else {
+        console.error('Error fetching users:', data.error)
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(()=>{
-    setCurrentPage(1)
-    loadData(1, searchValue)
-    // .then((data) => {
-    //   setInformationList([...data])
-    // })
-
-    setUsersList(
-      [
-        {
-          id: 1,
-          name: 'Artem Kurylenko',
-          email: 'examle@gmail.com',
-          status: 'admin',
-        },
-        {
-          id: 2,
-          name: 'Artem Kurylenko',
-          email: 'examle@gmail.com',
-          status: 'superAdmin',
-        },
-        {
-          id: 3,
-          name: 'Artem Kurylenko',
-          email: 'examle@gmail.com',
-          status: 'admin',
-        },
-        {
-          id: 4,
-          name: 'Artem Kurylenko',
-          email: 'examle@gmail.com',
-          status: 'user',
-        },
-      ]
-    )
-  }, [searchValue])
-
-  
   return (
     <div className="user-management-wrapper">
-      <Header/>
+      <Header />
       <div className="user-management-container">
         <div className="user-management-search-container">
           <Input
-            type='text'
+            type="text"
             value={searchValue}
-            onChange={(e)=>setSearchValue(e.target.value)}
-            placeholder='Search needed user'
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Search needed user"
           />
         </div>
         <div className="user-management-list">
-          {
-            usersList.map((user)=>{
-              return(
-                <UserCard
-                  key={`user-card-${user.id}`}
-                  id={user.id}
-                  name={user.name}
-                  email={user.email}
-                  status={user.status}
-                />
-              )
-            })
-          }
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
+            usersList.map((user) => (
+              <UserCard
+                key={`user-card-${user.id}`}
+                id={user.id}
+                name={user.full_name}
+                email={user.email}
+                status={user.status}
+              />
+            ))
+          )}
         </div>
-        <Pagination totalPages={pageNumber} currentPage={currentPage} setCurrentPage={setCurrentPage}/>
+        <Pagination totalPages={pageNumber} currentPage={currentPage} setCurrentPage={setCurrentPage} />
       </div>
     </div>
   )
 }
 
-export default UserManagement;
+export default UserManagement

@@ -1,6 +1,6 @@
 import './pagination.scss'
 
-import React, { FC } from 'react';
+import React, { FC } from 'react'
 
 type paginationType = {
     totalPages: number
@@ -42,7 +42,7 @@ const Pagination: FC<paginationType> = ({ totalPages, currentPage, setCurrentPag
             </button>
 
             <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-                &lt;
+                &lt
             </button>
 
             {getPageNumbers().map((page) => (
@@ -56,15 +56,15 @@ const Pagination: FC<paginationType> = ({ totalPages, currentPage, setCurrentPag
             ))}
 
             <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                &gt;
+                &gt
             </button>
 
             <button onClick={goToLastPage} disabled={currentPage === totalPages}>
                 Last
             </button>
         </div>
-    );
-};
+    )
+}
 
 
 export default Pagination

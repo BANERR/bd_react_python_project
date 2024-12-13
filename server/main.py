@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, request, Response
-
 import psycopg2
 from flask_cors import CORS
 import jwt
@@ -10,6 +9,8 @@ import random
 import string
 from werkzeug.utils import secure_filename
 import datetime
+import json
+
 
 app = Flask(__name__)
 CORS(app)  
@@ -167,7 +168,6 @@ def information_list():
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        # Определяем условие фильтрации
         base_query = """
             SELECT id, title, text, file_ids 
             FROM information
@@ -191,7 +191,6 @@ def information_list():
             search_filter = " AND (title ILIKE %s OR text ILIKE %s)"
             where_clause += search_filter
 
-        # Подсчёт общего количества записей
         count_query = f"SELECT COUNT(*) FROM ({base_query} {where_clause}) AS subquery"
         if page_type == 'savedInformation':
             cursor.execute(count_query, (user_id, f'%{search_value}%', f'%{search_value}%') if search_value else (user_id,))
@@ -201,7 +200,6 @@ def information_list():
         total_records = cursor.fetchone()[0]
         total_pages = (total_records + page_size - 1) // page_size
 
-        # Получение записей для текущей страницы
         offset = (page_number - 1) * page_size
         limit_offset_query = f"""
             {base_query} {where_clause}
@@ -225,12 +223,10 @@ def information_list():
 
         information_list = cursor.fetchall()
 
-        # Получаем файлы для каждой записи
         response_list = []
         for info in information_list:
             info_id, title, text, file_ids = info
             
-            # Извлекаем файлы по их ID
             file_list = []
             if file_ids:
                 cursor.execute(
@@ -241,12 +237,11 @@ def information_list():
                 for file in files:
                     file_id = file[0]
                     file_name = file[1]
-                    # Формируем URL для скачивания файла
                     file_url = f"http://localhost:5000/api/files/{file_id}/download"
                     file_list.append({
                         'id': file_id,
                         'name': file_name,
-                        'url': file_url  # Ссылка для скачивания
+                        'url': file_url  
                     })
             response_list.append({
                 'id': info_id,
@@ -257,7 +252,6 @@ def information_list():
 
         connection.close()
 
-        # Формируем ответ
         response = {
             'total_pages': total_pages,
             'information_list': response_list
@@ -283,7 +277,6 @@ def download_file(file_id):
         file_data, file_name = file
         connection.close()
 
-        # Отправляем файл для скачивания
         return Response(
             file_data,
             mimetype='application/octet-stream',
@@ -308,14 +301,12 @@ def save_information():
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        # Убедиться, что массив инициализирован
         cursor.execute("""
             UPDATE users
             SET saved_information = ARRAY[]::INT[]
             WHERE saved_information IS NULL AND id = %s;
         """, (user_id,))
 
-        # Получить текущий список сохранённой информации
         cursor.execute("""
             SELECT saved_information
             FROM users
@@ -328,16 +319,13 @@ def save_information():
 
         saved_information = result[0] if result[0] else []
 
-        # Определить действие: добавить или удалить
         if information_id in saved_information:
-            # Удалить информацию из массива
             cursor.execute("""
                 UPDATE users
                 SET saved_information = array_remove(saved_information, %s)
                 WHERE id = %s;
             """, (information_id, user_id))
         else:
-            # Добавить информацию в массив
             cursor.execute("""
                 UPDATE users
                 SET saved_information = array_append(saved_information, %s)
@@ -346,7 +334,6 @@ def save_information():
 
         connection.commit()
 
-        # Получить обновлённый список сохранённой информации
         cursor.execute("""
             SELECT saved_information
             FROM users
@@ -367,7 +354,6 @@ def delete_information(information_id):
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        # Удаляем информацию из таблицы
         cursor.execute("DELETE FROM information WHERE id = %s;", (information_id,))
         connection.commit()
         connection.close()
@@ -393,7 +379,6 @@ def add_information_with_files():
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        # Save each file as a BLOB in the files table
         for file in files:
             file_data = file.read()
             file_name = secure_filename(file.filename)
@@ -407,7 +392,6 @@ def add_information_with_files():
             file_id = cursor.fetchone()[0]
             file_ids.append(file_id)
 
-        # Insert information with linked file IDs
         cursor.execute(
             """
             INSERT INTO information (title, text, file_ids)
@@ -448,7 +432,6 @@ def get_information():
         
         title, text, file_ids = info
 
-        # Отримуємо файли за їхніми ID
         cursor.execute(
             """SELECT id, file_name FROM files WHERE id = ANY(%s)""", 
             (file_ids,)
@@ -468,30 +451,23 @@ def get_information():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Оновлення інформації
-from flask import request, jsonify
-import json
-
 @app.route('/api/information/<int:info_id>', methods=['PUT'])
 def update_information(info_id):
     try:
-        # Extract data from the request
         title = request.form['title']
         text = request.form['text']
-        new_files = request.files.getlist('files')  # Handle files
-        deleted_files = json.loads(request.form['deleted_files'])  # Handle deleted file IDs
+        new_files = request.files.getlist('files') 
+        deleted_files = json.loads(request.form['deleted_files']) 
 
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        # Update title and text
         cursor.execute("""
             UPDATE information
             SET title = %s, text = %s
             WHERE id = %s
         """, (title, text, info_id))
 
-        # Remove deleted files
         if deleted_files:
             for file_id in deleted_files:
                 cursor.execute("""
@@ -504,10 +480,9 @@ def update_information(info_id):
                     WHERE id = %s
                 """, (file_id, info_id))
 
-        # Add new files
         file_ids = []
         for file in new_files:
-            file_data = file.read()  # Read file binary data
+            file_data = file.read()  
             file_name = file.filename
 
             cursor.execute("""
@@ -516,7 +491,6 @@ def update_information(info_id):
             """, (file_data, file_name))
             file_ids.append(cursor.fetchone()[0])
 
-        # Update file IDs in the information table
         if file_ids:
             cursor.execute("""
                 UPDATE information
@@ -538,7 +512,6 @@ def update_information(info_id):
 @app.route('/api/user/update', methods=['PUT'])
 def update_user():
     try:
-        # Get the user data from the request
         data = request.get_json()
         user_id = data.get('user_id')
         full_name = data.get('full_name')
@@ -558,6 +531,102 @@ def update_user():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+# ------------------------------------------ User Managment -----------------------------------------------------------
+
+    
+
+@app.route('/api/users-list', methods=['POST'])
+def users_list():
+    try:
+        data = request.get_json()
+        search_value = data.get('search_value', '')  
+        page_number = int(data.get('page_number', 1)) 
+        page_size = 5 
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        base_query = """
+            SELECT id, full_name, email, status 
+            FROM users
+        """
+        where_clause = ""
+
+        if search_value:
+            where_clause = "WHERE full_name ILIKE %s OR email ILIKE %s"
+
+        count_query = f"SELECT COUNT(*) FROM ({base_query} {where_clause}) AS subquery"
+        if search_value:
+            cursor.execute(count_query, (f'%{search_value}%', f'%{search_value}%'))
+        else:
+            cursor.execute(count_query)
+
+        total_records = cursor.fetchone()[0]
+        total_pages = (total_records + page_size - 1) // page_size  
+
+        offset = (page_number - 1) * page_size
+        limit_offset_query = f"""
+            {base_query} {where_clause}
+            ORDER BY id
+            LIMIT %s OFFSET %s
+        """
+        if search_value:
+            cursor.execute(limit_offset_query, (f'%{search_value}%', f'%{search_value}%', page_size, offset))
+        else:
+            cursor.execute(limit_offset_query, (page_size, offset))
+
+        users_list = cursor.fetchall()
+
+        connection.close()
+
+        response_list = [{
+            'id': user[0],
+            'full_name': user[1],
+            'email': user[2],
+            'status': user[3]
+        } for user in users_list]
+
+        response = {
+            'total_pages': total_pages,
+            'users_list': response_list
+        }
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/api/user/promote', methods=['POST'])
+def promote_user():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        new_status = data.get('new_status')
+
+        if new_status not in ['admin', 'superAdmin', 'user']:
+            return jsonify({'error': 'Invalid status'}), 400
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            UPDATE users
+            SET status = %s
+            WHERE id = %s;
+        """, (new_status, user_id))
+
+        connection.commit()
+        connection.close()
+
+        return jsonify({'message': 'User status updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 
 
 if __name__ == '__main__':

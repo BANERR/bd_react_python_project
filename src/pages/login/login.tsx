@@ -1,44 +1,53 @@
-import { useState, useEffect } from 'react';
-import './login.scss';
-import Header from '../../components/general/header/header';
-import Input from '../../components/general/input/input';
-import Button from '../../components/general/button/button';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { setUserData } from '../../redux/slicers/userSlice';
+//styles
+import './login.scss'
+
+//react
+import { useState, useEffect } from 'react'
+
+//redux
+import { useDispatch } from 'react-redux'
+import { setUserData } from '../../redux/slicers/userSlice'
+
+//components
+import Header from '../../components/general/header/header'
+import Input from '../../components/general/input/input'
+import Button from '../../components/general/button/button'
+
+//other
+import { useNavigate } from 'react-router-dom'
+
 
 type Errors = {
-    email?: string;
-    password?: string;
-};
+    email?: string
+    password?: string
+}
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [rememberMe, setRememberMe] = useState(false);
-    const [errors, setErrors] = useState<Errors>({});
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [rememberMe, setRememberMe] = useState(false)
+    const [errors, setErrors] = useState<Errors>({})
 
     const navigate = useNavigate()
     const dispatch = useDispatch()
 
     useEffect(() => {
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        const authToken = localStorage.getItem('authToken');
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+        const authToken = localStorage.getItem('authToken')
         
-        // Проверка срока действия токена
         if (authToken && userData) {
-            const tokenExpiration = userData.tokenExpiration;
+            const tokenExpiration = userData.tokenExpiration
             if (Date.now() < tokenExpiration) {
-                dispatch(setUserData(userData));
-                navigate('/');
+                dispatch(setUserData(userData))
+                navigate('/')
             } else {
-                localStorage.clear(); // Очищаем данные, если токен просрочен
+                localStorage.clear() 
             }
         }
-    }, [dispatch, navigate]);
+    }, [dispatch, navigate])
     
     const handleSubmit = async () => {
-        if (!checkErrors()) return;
+        if (!checkErrors()) return
     
         try {
             const response = await fetch('http://localhost:5000/api/user/login', {
@@ -50,14 +59,13 @@ const Login = () => {
                     email,
                     password,
                 }),
-            });
+            })
     
             if (response.ok) {
-                const data = await response.json();
+                const data = await response.json()
     
-                // Устанавливаем токен и данные в localStorage
-                const tokenExpiration = Date.now() + 3600 * 1000; // Токен действителен 1 день
-                localStorage.setItem('authToken', data.token);
+                const tokenExpiration = Date.now() + 3600 * 1000
+                localStorage.setItem('authToken', data.token)
                 localStorage.setItem('userData', JSON.stringify({
                     id: data.user.id,
                     fullName: data.user.full_name,
@@ -66,20 +74,19 @@ const Login = () => {
                     loginned: true,
                     password: data.user.password,
                     savedInformation: data.user.saved_information,
-                    tokenExpiration, // Сохраняем время истечения токена
-                }));
+                    tokenExpiration, 
+                }))
     
-                // Устанавливаем данные пользователя в Redux
-                dispatch(setUserData(data.user));
-                navigate('/');
+                dispatch(setUserData(data.user))
+                navigate('/')
             } else {
-                alert('Login failed. Please check your credentials.');
+                alert('Login failed. Please check your credentials.')
             }
         } catch (error) {
-            console.error('Error during login:', error);
-            alert('An error occurred during login.');
+            console.error('Error during login:', error)
+            alert('An error occurred during login.')
         }
-    };
+    }
     
     
 
@@ -134,7 +141,7 @@ const Login = () => {
                 </div>
             </div>
         </div>
-    );
-};
+    )
+}
 
-export default Login;
+export default Login
