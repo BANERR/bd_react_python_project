@@ -1,53 +1,89 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Импортируем useNavigate для перенаправления
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
 
-//styles
+// styles
 import './profile.scss'
 
-//components
+// components
 import Header from '../../components/general/header/header';
 import Input from '../../components/general/input/input';
 import Button from '../../components/general/button/button';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../redux/store';
+import { setUserData } from '../../redux/slicers/userSlice';
 
 type errors = {
-    email?: string
-    password?: string
-    fullName?: string
+    email?: string;
+    password?: string;
+    fullName?: string;
 }
 
 const Profile = () => {
-    const [fullName, setFullName] = useState('')
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [errors, setErrors] = useState<errors>({email: '', password: ''})
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [errors, setErrors] = useState<errors>({ email: '', password: '', fullName: '' });
 
-    const navigate = useNavigate()
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const user = useSelector((state: RootState) => state.user.userData);
 
+    // Validate form fields
     const checkErrors = () => {
-        setErrors({email: '', password: ''})
-        let flag = true
+        setErrors({ email: '', password: '', fullName: '' });
+        let flag = true;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if(!emailRegex.test(email)){
-            setErrors(prevErrors => ({...prevErrors, email: 'Enter correct email'}))
-            flag = false
-        } else setErrors(prevErrors => ({...prevErrors, email: ''}))
+        if (!emailRegex.test(email)) {
+            setErrors(prevErrors => ({ ...prevErrors, email: 'Enter a valid email' }));
+            flag = false;
+        }
 
-        if(password.length < 8){
-            setErrors(prevErrors => ({...prevErrors, password: 'Enter correct password'}))
-            flag = false
-        } else setErrors(prevErrors => ({...prevErrors, password: ''}))
+        if (password.length < 8) {
+            setErrors(prevErrors => ({ ...prevErrors, password: 'Password must be at least 8 characters' }));
+            flag = false;
+        }
 
-        if(fullName.length < 3){
-            setErrors(prevErrors => ({...prevErrors, fullName: 'Enter correct full name'}))
-            flag = false
-        } else setErrors(prevErrors => ({...prevErrors, fullName: ''}))
+        if (fullName.length < 3) {
+            setErrors(prevErrors => ({ ...prevErrors, fullName: 'Full name must be at least 3 characters' }));
+            flag = false;
+        }
 
-        return flag
+        return flag;
     }
 
-    const handleSubmit = () => {
-        checkErrors()
+    const handleSubmit = async () => {
+        if (checkErrors()) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/user/update`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                    },
+                    body: JSON.stringify({ 
+                        user_id: user.id,
+                        full_name: fullName, 
+                        email: email, 
+                        password: password
+                    }),
+                });
+
+                if (response.ok) {
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    userData.fullName = fullName;
+                    userData.email = email;
+                    userData.password = password;
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    dispatch(setUserData(userData));
+                    
+                } else {
+                    console.error('Error updating profile');
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+            }
+        }
     }
 
     const logout = () => {
@@ -67,42 +103,40 @@ const Profile = () => {
 
     return (
         <div className="edit-wrapper">
-            <Header/>
+            <Header />
             <div className="edit-container">
                 <Input
-                    type='text'
+                    type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder='Enter your full name'
+                    placeholder="Enter your full name"
                     error={errors.fullName}
                 />
-
                 <Input
-                    type='email'
+                    type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder='Enter your email'
+                    placeholder="Enter your email"
                     error={errors.email}
                 />
                 <Input
-                    type='text'
+                    type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder='Enter your password'
+                    placeholder="Enter your password"
                     error={errors.password}
                 />
 
                 <div className="edit-action-container">
-                    <Button text='Save' onClick={() => handleSubmit()} />
+                    <Button text="Save" onClick={handleSubmit} />
                 </div>
 
                 <div className="edit-action-container">
-                    <Button text='Log out' onClick={() => logout()} />
+                    <Button text="Log out" onClick={logout} />
                 </div>
-
             </div>
         </div>
-    )
+    );
 }
 
 export default Profile;

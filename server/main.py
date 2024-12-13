@@ -530,7 +530,34 @@ def update_information(info_id):
     except Exception as e:
         connection.rollback()
         return jsonify({"error": str(e)}), 500
+    
 
+# ------------------------------------------ Edit profile -----------------------------------------------------------
+
+
+@app.route('/api/user/update', methods=['PUT'])
+def update_user():
+    try:
+        # Get the user data from the request
+        data = request.get_json()
+        user_id = data.get('user_id')
+        full_name = data.get('full_name')
+        email = data.get('email') 
+        password = data.get('password') 
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        update_query = "UPDATE users SET full_name = %s, email = %s, password = %s WHERE id = %s"
+        cursor.execute(update_query, (full_name, email, password, user_id))
+
+        connection.commit()
+        connection.close()
+
+        return jsonify({'message': 'User information updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':
